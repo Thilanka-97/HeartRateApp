@@ -9,7 +9,7 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.os.Handler;
+// import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Surface;
@@ -23,15 +23,14 @@ import java.util.Objects;
 class CameraService {
     private String cameraId;
     private final Activity activity;
-    private final Handler handler;
+    // private final Handler handler;
     private CameraDevice cameraDevice;
     private CameraCaptureSession previewSession;
 
     private CaptureRequest.Builder previewCaptureRequestBuilder;
 
-    CameraService(Activity _activity, Handler _handler) {
+    CameraService(Activity _activity) {
         activity = _activity;
-        handler = _handler;
     }
 
     void start(Surface previewSurface) {

@@ -5,165 +5,243 @@
  * @format
  */
 
-// import 'react-native-reanimated';
-// import 'react-native-gesture-handler';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  // TouchableHighlight,
-  // StyleSheet,
-  // Text,
-  View,
-  NativeModules,
-  DeviceEventEmitter,
-  // requireNativeComponent,
-  // Dimensions,
-  // TextInput,
-  // ScrollView,
-  findNodeHandle,
+	SafeAreaView,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+	NativeModules,
+	DeviceEventEmitter,
+	requireNativeComponent,
+	HostComponent,
+	Dimensions
 } from 'react-native';
+import Heart from './Heart';
 
 const { HeartRateModule } = NativeModules;
 const listeners: any = {};
 
 export const addListener = (eventName: string, callback: any) => {
-  listeners[eventName] = DeviceEventEmitter.addListener(eventName, callback);
+	listeners[eventName] = DeviceEventEmitter.addListener(eventName, callback);
 };
-
-// const CameraPreview = requireNativeComponent('CameraPreviewView');
 
 export const removeListener = (eventName: string | number) => {
-  if (listeners[eventName]) {
-    listeners[eventName].remove();
-    delete listeners[eventName];
-  }
+	if (listeners[eventName]) {
+		listeners[eventName].remove();
+		delete listeners[eventName];
+	}
 };
 
+enum StatusTypes {
+	IDLE = 'IDLE',
+	START = 'START',
+	FINISH = 'FINISH',
+	RUNNING = 'RUNNING',
+	STOP = 'STOP'
+}
+
 function App(): JSX.Element {
-  // const cameraRef = React.useRef<RNCamera | null>(null);
-  // const colorSignalRef = React.useRef<number[]>([]);
-  // const [torch, setTorch] = useState<'on' | 'off'>('off');
+	const [pulse, setPulse] = useState<string>('__._');
+	const [status, setStatus] = useState<StatusTypes>(StatusTypes.IDLE);
 
-  const myComponentRef = useRef(null);
+	const cameraComponentRef = useRef<any>(null);
+	const graphComponentRef = useRef(null);
 
-  const crateCameraPreview = () => {
-    const nativeHandle = findNodeHandle(myComponentRef.current);
-    if (nativeHandle) {
-      HeartRateModule.startMeasure(nativeHandle);
-    }
-  };
+	let CameraView: HostComponent<unknown> | null = null;
 
-  const takePicture = async () => {
-    console.log('takePicture');
-    // const message = await HeartRateModule.getMessage();
+	useEffect(() => {
+		setTimeout(() => {
+			HeartRateModule.createTextureView().then((textureViewId: number) => {
+				handleListeners();
 
-    addListener('hello', (eventData: any) => {
-      // Handle the event data
-      console.log('Received event data:', eventData);
-    });
+				const TextureView = requireNativeComponent('TextureView');
+				console.log('textureViewId', textureViewId);
+				cameraComponentRef.current = textureViewId;
+				CameraView = TextureView as HostComponent<unknown>;
+				console.log('cameraComponentRef', cameraComponentRef);
+				console.log('TextureView', TextureView);
+				handleStartMeasure();
+			});
+		}, 2000);
+	}, []);
 
-    addListener('onFinish', (eventData: any) => {
-      // Handle the event data
-      console.log('onFinish Received event data:', eventData);
-    });
+	const handleStartMeasure = () => {
+		setPulse('__._');
+		HeartRateModule.startMeasure(cameraComponentRef.current);
+	};
 
-    // HeartRateModule.emitEvent('TEST');
-    HeartRateModule.openXmlLayoutActivity();
+	const handleListeners = async () => {
+		console.log('handleListeners');
 
-    console.log(HeartRateModule);
-    // console.log(message);
-  };
+		addListener('full_string', (eventData: any) => {
+			console.log('Received event data:', eventData);
+		});
 
-  const testFunc = () => {
-    addListener('onFinish', (eventData: any) => {
-      // Handle the event data
-      console.log('onFinish Received event data:', eventData);
-      console.log('onFinish Received event data:', JSON.parse(eventData));
-    });
-    addListener('onTest', (eventData: any) => {
-      // Handle the event data
-      console.log('onTest Received event data:', eventData);
-      console.log('onTest Received event data:', JSON.parse(eventData));
-      JSON.parse(eventData).map((item: any) => {
-        console.log('measurement', item.measurement);
-        console.log('timestamp', item.timestamp);
-      });
-    });
-    HeartRateModule.testFunction();
-  };
+		addListener('pulse', (eventData: number) => {
+			console.log('Received pulse', Number(eventData).toFixed(1));
+			setPulse(Number(eventData).toFixed(1));
+		});
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        {/* <TouchableOpacity
-          onPress={() => {
-            console.log('torch jkj', torch);
-            setTorch((val) => (val === 'off' ? 'on' : 'off'));
-          }}
-          style={styles.capture}
-        >
-          <Text style={{ fontSize: 14, color: 'black' }}> Torch </Text>
-        </TouchableOpacity> */}
-        {/* <View style={{ flex: 1 }}>
-          <View style={{ width: Dimensions.get('window').width, height: 59 }} />
+		addListener('status', (eventData: StatusTypes) => {
+			console.log('Received status', eventData);
+			setStatus(eventData);
+		});
 
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 50, height: 50 }} />
-            <Text style={{ flex: 1, marginLeft: 5, fontSize: 24, fontWeight: 'bold' }}>Result will appear here</Text>
-          </View>
+		addListener('onFinish', (eventData: any) => {
+			console.log('onFinish Received event data:', eventData);
+		});
 
-          <ScrollView style={{ flex: 1, marginHorizontal: 5 }}>
-            <TextInput
-              style={{ flex: 1, height: '100%', borderWidth: 1, borderColor: 'gray' }}
-              placeholder="Result will appear here"
-              editable={false}
-            />
-          </ScrollView>
-        </View> */}
+		console.log(HeartRateModule);
+	};
 
-        <View ref={myComponentRef} />
+	return (
+		<SafeAreaView style={styles.container}>
+			<View
+				style={{
+					flexDirection: 'row',
+					justifyContent: 'center',
+					alignItems: 'center',
+					height: '100%',
+					position: 'relative'
+				}}
+			>
+				<View
+					style={{
+						display: status === StatusTypes.RUNNING ? 'flex' : 'none',
+						flexDirection: 'row',
+						alignItems: 'center',
+						justifyContent: 'center',
+						position: 'absolute',
+						top: Dimensions.get('screen').height * 0.1,
+						width: '80%'
+					}}
+				>
+					<Heart />
+				</View>
+				<View
+					style={{
+						display: 'flex',
+						flexDirection: 'column',
+						gap: 20
+					}}
+				>
+					<View
+						style={{
+							display: 'flex',
+							justifyContent: 'center',
+							alignItems: 'center',
+							borderWidth: 3,
+							borderColor: 'red',
+							borderRadius: Dimensions.get('screen').width * 0.6,
+							width: Dimensions.get('screen').width * 0.6,
+							aspectRatio: 1
+						}}
+					>
+						<View
+							style={{
+								display: 'flex',
+								flexDirection: 'row',
+								alignItems: 'center'
+							}}
+						>
+							<Text
+								style={{
+									fontSize: 100,
+									fontWeight: '400'
+								}}
+							>
+								{pulse}
+							</Text>
+							{/* <Text
+								style={{
+									fontSize: 60,
+									fontWeight: '400'
+								}}
+							>
+								{`.${pulse.split('.')[1][0]}`}
+							</Text> */}
+						</View>
 
-        <TouchableOpacity onPress={() => takePicture()} style={styles.capture}>
-          <Text style={{ fontSize: 14, color: 'black' }}> Open Heart Rate Monitor </Text>
-        </TouchableOpacity>
-        {/* <TouchableOpacity onPress={() => getMediaDevice()} style={styles.capture}>
-          <Text style={{ fontSize: 14, color: 'black' }}> Camera ON </Text>
-        </TouchableOpacity> */}
-
-        <TouchableOpacity onPress={() => crateCameraPreview()} style={styles.capture}>
-          <Text style={{ fontSize: 14, color: 'black' }}> TEST </Text>
-        </TouchableOpacity>
-      </View>
-      {/* </ScrollView> */}
-    </SafeAreaView>
-  );
+						<Text
+							style={{
+								fontSize: 30,
+								fontWeight: 'bold',
+								color: 'gray'
+							}}
+						>
+							BPM
+						</Text>
+					</View>
+					<View ref={cameraComponentRef} style={styles.textureViewContainer}></View>
+				</View>
+				<View
+					style={{
+						display: status === StatusTypes.FINISH ? 'flex' : 'none',
+						flexDirection: 'row',
+						alignItems: 'center',
+						justifyContent: 'center',
+						position: 'absolute',
+						bottom: Dimensions.get('screen').height * 0.15,
+						width: '80%'
+					}}
+				>
+					<TouchableOpacity
+						onPress={() => handleStartMeasure()}
+						style={styles.measureButton}
+					>
+						<Text
+							style={{
+								fontSize: 16,
+								color: 'white',
+								fontWeight: '600',
+								textAlign: 'center'
+							}}
+						>
+							New Measure
+						</Text>
+					</TouchableOpacity>
+				</View>
+				{/* <View ref={cameraComponentRef} />
+				<View ref={graphComponentRef} /> */}
+			</View>
+			{/* </ScrollView> */}
+		</SafeAreaView>
+	);
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-    zIndex: 1,
-  },
+	container: {
+		flex: 1,
+		flexDirection: 'column',
+		backgroundColor: 'black'
+	},
+	preview: {
+		flex: 1,
+		justifyContent: 'flex-end',
+		alignItems: 'center'
+	},
+	measureButton: {
+		color: '#fff',
+		backgroundColor: 'red',
+		fontWeight: '700',
+		padding: 15,
+		paddingHorizontal: 20,
+		alignSelf: 'center',
+		borderRadius: 5,
+		zIndex: 1,
+		width: '100%'
+	},
+	textureViewContainer: {
+		width: 200, // Set the width as needed
+		height: 200, // Set the height as needed
+		position: 'absolute', // You can adjust the position as needed
+		top: 20, // Adjust the top position as needed
+		left: 20 // Adjust the left position as needed
+		// Add any other styles you require
+	}
 });
 
 export default App;

@@ -34,12 +34,12 @@
         </intent-filter>
       </activity>
       <!-- Declare HeartRateMainActivity without MAIN and LAUNCHER attributes -->
-      <activity
+      <!-- <activity
         android:name=".HeartRateMainActivity"
         android:label="HeartRateMainActivity"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
         android:windowSoftInputMode="adjustResize"
         android:exported="true">
-      </activity>
+      </activity> -->
     </application>
 </manifest>

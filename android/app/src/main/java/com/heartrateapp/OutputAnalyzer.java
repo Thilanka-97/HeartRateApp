@@ -1,7 +1,9 @@
 package com.heartrateapp;
 
+import static com.heartrateapp.HeartRateModule.getMessage;
 import static com.heartrateapp.HeartRateModule.sendHeartRateOutput;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.CountDownTimer;
@@ -17,9 +19,9 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class OutputAnalyzer {
-    private final HeartRateMainActivity activity;
+    private final Activity activity;
 
-    private final ChartDrawer chartDrawer;
+    // private final ChartDrawer chartDrawer;
 
     private MeasureStore store;
 
@@ -34,12 +36,14 @@ class OutputAnalyzer {
 
     private CountDownTimer timer;
 
-    private final Handler mainHandler;
+  //  private final Handler mainHandler;
 
-    OutputAnalyzer(HeartRateMainActivity activity, TextureView graphTextureView, Handler mainHandler) {
+    // OutputAnalyzer(Activity activity, TextureView graphTextureView, Handler mainHandler) {
+    OutputAnalyzer(Activity activity) {
+
         this.activity = activity;
-        this.chartDrawer = new ChartDrawer(graphTextureView);
-        this.mainHandler = mainHandler;
+        // this.chartDrawer = new ChartDrawer(graphTextureView);
+        // this.mainHandler = mainHandler;
     }
 
     private boolean detectValley() {
@@ -61,7 +65,7 @@ class OutputAnalyzer {
     }
 
     void measurePulse(TextureView textureView, CameraService cameraService) {
-
+        getMessage("status", "RUNNING");
         // 20 times a second, get the amount of red on the picture.
         // detect local minimums, calculate pulse.
 
@@ -103,27 +107,31 @@ class OutputAnalyzer {
                         valleys.add(store.getLastTimestamp().getTime());
                         // in 13 seconds (13000 milliseconds), I expect 15 valleys. that would be a pulse of 15 / 130000 * 60 * 1000 = 69
 
+                        float pulse = (valleys.size() == 1)
+                                ? (60f * (detectedValleys)
+                                / (Math.max(1,
+                                (measurementLength - millisUntilFinished - clipLength)
+                                        / 1000f)))
+                                : (60f * (detectedValleys - 1)
+                                / (Math.max(1,
+                                (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f)));
+
                         String currentValue = String.format(
                                 Locale.getDefault(),
                                 activity.getResources().getQuantityString(R.plurals.measurement_output_template,
                                         detectedValleys),
-                                (valleys.size() == 1)
-                                        ? (60f * (detectedValleys)
-                                                / (Math.max(1,
-                                                        (measurementLength - millisUntilFinished - clipLength)
-                                                                / 1000f)))
-                                        : (60f * (detectedValleys - 1)
-                                                / (Math.max(1,
-                                                        (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f))),
+                                pulse,
                                 detectedValleys,
                                 1f * (measurementLength - millisUntilFinished - clipLength) / 1000f);
+                        getMessage("full_string", currentValue);
+                        getMessage("pulse", String.valueOf(pulse));
 
-                        sendMessage(HeartRateMainActivity.MESSAGE_UPDATE_REALTIME, currentValue);
+                       // sendMessage(activity.MESSAGE_UPDATE_REALTIME, currentValue);
                     }
 
                     // draw the chart on a separate thread.
-                    Thread chartDrawerThread = new Thread(() -> chartDrawer.draw(store.getStdValues()));
-                    chartDrawerThread.start();
+                    // Thread chartDrawerThread = new Thread(() -> chartDrawer.draw(store.getStdValues()));
+                    // chartDrawerThread.start();
                 });
                 thread.start();
             }
@@ -152,24 +160,24 @@ class OutputAnalyzer {
                 // If the camera only provided a static image, there are no valleys in the signal.
                 // A camera not available error is shown, which is the most likely cause.
                 if (valleys.size() == 0) {
-                    mainHandler.sendMessage(Message.obtain(
-                            mainHandler,
-                            HeartRateMainActivity.MESSAGE_CAMERA_NOT_AVAILABLE,
-                            "No valleys detected - there may be an issue when accessing the camera."));
+                    // mainHandler.sendMessage(Message.obtain(
+                    //        mainHandler,
+                    //        activity.MESSAGE_CAMERA_NOT_AVAILABLE,
+                    //       "No valleys detected - there may be an issue when accessing the camera."));
                     return;
                 }
 
-                String currentValue = String.format(
-                        Locale.getDefault(),
-                        activity.getResources().getQuantityString(R.plurals.measurement_output_template, detectedValleys - 1),
-                        60f * (detectedValleys - 1) / (Math.max(1, (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f)),
-                        detectedValleys - 1,
-                        1f * (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f);
+                // String currentValue = String.format(
+                //         Locale.getDefault(),
+                //         activity.getResources().getQuantityString(R.plurals.measurement_output_template, detectedValleys - 1),
+                //         60f * (detectedValleys - 1) / (Math.max(1, (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f)),
+                //         detectedValleys - 1,
+                //         1f * (valleys.get(valleys.size() - 1) - valleys.get(0)) / 1000f);
 
-                sendMessage(HeartRateMainActivity.MESSAGE_UPDATE_REALTIME, currentValue);
+                // sendMessage(HeartRateMainActivity.MESSAGE_UPDATE_REALTIME, currentValue);
 
                 StringBuilder returnValueSb = new StringBuilder();
-                returnValueSb.append(currentValue);
+                //  returnValueSb.append(currentValue);
                 returnValueSb.append(activity.getString(R.string.row_separator));
 
                 // look for "drops" of 0.15 - 0.75 in the value
@@ -226,17 +234,18 @@ class OutputAnalyzer {
                     returnValueSb.append(activity.getString(R.string.row_separator));
                 }
 
-                sendMessage(HeartRateMainActivity.MESSAGE_UPDATE_FINAL, returnValueSb.toString());
+                // sendMessage(HeartRateMainActivity.MESSAGE_UPDATE_FINAL, returnValueSb.toString());
 
                 cameraService.stop();
             }
         };
 
-        activity.setViewState(HeartRateMainActivity.VIEW_STATE.MEASUREMENT);
+        // activity.setViewState(HeartRateMainActivity.VIEW_STATE.MEASUREMENT);
         timer.start();
     }
 
     void stop() {
+        getMessage("status", "STOP");
         if (timer != null) {
             timer.cancel();
         }
@@ -246,6 +255,6 @@ class OutputAnalyzer {
         Message msg = new Message();
         msg.what = what;
         msg.obj = message;
-        mainHandler.sendMessage(msg);
+        // mainHandler.sendMessage(msg);
     }
 }
