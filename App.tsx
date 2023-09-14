@@ -63,13 +63,14 @@ function App(): JSX.Element {
 				CameraView = TextureView as HostComponent<unknown>;
 				console.log('cameraComponentRef', cameraComponentRef);
 				console.log('TextureView', TextureView);
-				handleStartMeasure();
+				// handleStartMeasure();
 			});
 		}, 2000);
 	}, []);
 
 	const handleStartMeasure = () => {
 		setPulse('__._');
+		console.log('cameraComponentRef.current', cameraComponentRef.current);
 		HeartRateModule.startMeasure(cameraComponentRef.current);
 	};
 
@@ -99,115 +100,110 @@ function App(): JSX.Element {
 
 	return (
 		<SafeAreaView style={styles.container}>
+			{/* <View
+				nativeID={'121'}
+				ref={cameraComponentRef}
+				style={{
+					width: 100,
+					height: 100,
+					borderWidth: 1,
+					borderColor: 'white'
+				}}
+			>
+				<RNCameraViewManager />
+			</View> */}
 			<View
 				style={{
+					display: status === StatusTypes.RUNNING ? 'flex' : 'none',
 					flexDirection: 'row',
-					justifyContent: 'center',
 					alignItems: 'center',
-					height: '100%',
-					position: 'relative'
+					justifyContent: 'center',
+					position: 'absolute',
+					top: Dimensions.get('screen').height * 0.1,
+					width: '80%'
+				}}
+			>
+				<Heart />
+			</View>
+			<View
+				style={{
+					display: 'flex',
+					flexDirection: 'column',
+					gap: 20
 				}}
 			>
 				<View
 					style={{
-						display: status === StatusTypes.RUNNING ? 'flex' : 'none',
-						flexDirection: 'row',
-						alignItems: 'center',
-						justifyContent: 'center',
-						position: 'absolute',
-						top: Dimensions.get('screen').height * 0.1,
-						width: '80%'
-					}}
-				>
-					<Heart />
-				</View>
-				<View
-					style={{
 						display: 'flex',
-						flexDirection: 'column',
-						gap: 20
+						justifyContent: 'center',
+						alignItems: 'center',
+						borderWidth: 3,
+						borderColor: 'red',
+						borderRadius: Dimensions.get('screen').width * 0.6,
+						width: Dimensions.get('screen').width * 0.6,
+						aspectRatio: 1
 					}}
 				>
 					<View
 						style={{
 							display: 'flex',
-							justifyContent: 'center',
-							alignItems: 'center',
-							borderWidth: 3,
-							borderColor: 'red',
-							borderRadius: Dimensions.get('screen').width * 0.6,
-							width: Dimensions.get('screen').width * 0.6,
-							aspectRatio: 1
+							flexDirection: 'row',
+							alignItems: 'center'
 						}}
 					>
-						<View
-							style={{
-								display: 'flex',
-								flexDirection: 'row',
-								alignItems: 'center'
-							}}
-						>
-							<Text
-								style={{
-									fontSize: 100,
-									fontWeight: '400'
-								}}
-							>
-								{pulse}
-							</Text>
-							{/* <Text
-								style={{
-									fontSize: 60,
-									fontWeight: '400'
-								}}
-							>
-								{`.${pulse.split('.')[1][0]}`}
-							</Text> */}
-						</View>
-
 						<Text
 							style={{
-								fontSize: 30,
-								fontWeight: 'bold',
-								color: 'gray'
+								fontSize: 100,
+								fontWeight: '400'
 							}}
 						>
-							BPM
+							{pulse}
 						</Text>
 					</View>
-					<View ref={cameraComponentRef} style={styles.textureViewContainer}></View>
-				</View>
-				<View
-					style={{
-						display: status === StatusTypes.FINISH ? 'flex' : 'none',
-						flexDirection: 'row',
-						alignItems: 'center',
-						justifyContent: 'center',
-						position: 'absolute',
-						bottom: Dimensions.get('screen').height * 0.15,
-						width: '80%'
-					}}
-				>
-					<TouchableOpacity
-						onPress={() => handleStartMeasure()}
-						style={styles.measureButton}
+
+					<Text
+						style={{
+							fontSize: 30,
+							fontWeight: 'bold',
+							color: 'gray'
+						}}
 					>
-						<Text
-							style={{
-								fontSize: 16,
-								color: 'white',
-								fontWeight: '600',
-								textAlign: 'center'
-							}}
-						>
-							New Measure
-						</Text>
-					</TouchableOpacity>
+						BPM
+					</Text>
 				</View>
-				{/* <View ref={cameraComponentRef} />
-				<View ref={graphComponentRef} /> */}
 			</View>
-			{/* </ScrollView> */}
+			<View
+				style={{
+					display:
+						status === StatusTypes.FINISH || status === StatusTypes.IDLE
+							? 'flex'
+							: 'none',
+					flexDirection: 'row',
+					alignItems: 'center',
+					justifyContent: 'center',
+					position: 'absolute',
+					bottom: Dimensions.get('screen').height * 0.15,
+					width: '80%'
+				}}
+			>
+				<TouchableOpacity
+					onPress={() => handleStartMeasure()}
+					style={styles.measureButton}
+				>
+					<Text
+						style={{
+							fontSize: 16,
+							color: 'white',
+							fontWeight: '600',
+							textAlign: 'center'
+						}}
+					>
+						{status === StatusTypes.FINISH
+							? 'New Measure'
+							: status === StatusTypes.IDLE && 'Start Measure'}
+					</Text>
+				</TouchableOpacity>
+			</View>
 		</SafeAreaView>
 	);
 }
@@ -215,7 +211,10 @@ function App(): JSX.Element {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		flexDirection: 'column',
+		justifyContent: 'center',
+		alignItems: 'center',
+		height: '100%',
+		position: 'relative',
 		backgroundColor: 'black'
 	},
 	preview: {
