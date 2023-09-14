@@ -14,9 +14,13 @@ import androidx.annotation.NonNull;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.UIManagerModule;
+import com.facebook.react.views.view.ReactViewGroup;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,7 +36,6 @@ public class HeartRateModule extends ReactContextBaseJavaModule {
     private OutputAnalyzer analyzer;
     private static ReactApplicationContext reactContext;
     static final AtomicInteger number = new AtomicInteger(0);
-    // private Handler mainHandler;
     private static TextureView cameraTextureView;
 
     private CameraService cameraService;
@@ -50,16 +53,6 @@ public class HeartRateModule extends ReactContextBaseJavaModule {
                 .emit(eventName, eventData);
         return null;
     }
-
-    // @ReactMethod
-    // public static void testFunction() {
-    //    // test function
-    //     HeartRateMainActivity instance = new HeartRateMainActivity();
-
-    //     // Call the non-static method using the instance
-    //     instance.newMeasurement();
-
-    // }
 
     public static void sendHeartRateOutput(String eventName, ArrayList<HeartRateOutputObject> eventData) {
         getMessage("status", "FINISH");
@@ -80,19 +73,7 @@ public class HeartRateModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public static void emitEvent(String eventData) {
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                int currentValue = number.getAndIncrement();
-                getMessage("hello", eventData + " " + currentValue);
-            }
-        }, 2000, 2000);
-    }
-
-    @ReactMethod
-    public void createTextureView(Promise promise) {
+    public void createTextureView(Promise promise ) {
         currentActivity = reactContext.getCurrentActivity();
 
         // Create the TextureView programmatically here
@@ -104,33 +85,40 @@ public class HeartRateModule extends ReactContextBaseJavaModule {
         cameraTextureView.setLayoutParams(layoutParams);
 
         Log.i("currentActivity", String.valueOf(currentActivity));
-        Log.i("currentActivity", "currentActivity");
+        // Log.i("parentId", String.valueOf(parentId));
         // Add the TextureView to the current activity's view hierarchy
-        currentActivity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ViewGroup rootView = (ViewGroup) currentActivity.findViewById(android.R.id.content);
-                rootView.addView(cameraTextureView);
+        // currentActivity.runOnUiThread(new Runnable() {
+        //     @Override
+        //     public void run() {
+        //         ViewGroup rootView = (ViewGroup) currentActivity.findViewById(android.R.id.content);
+        //         // ReactViewGroup rootView = (ReactViewGroup) currentActivity.findViewById(parentId);
+        //         Log.i("rootView", String.valueOf(rootView));
+        //         rootView.addView(cameraTextureView);
                 promise.resolve(cameraTextureView.getId());
-            }
-        });
+        //     }
+        // });
     }
 
      @ReactMethod
      public void startMeasure(int textureViewId) {
-        getMessage("status", "START");
+        int viewId = NewRNCameraView.generateViewId();
+         getMessage("status", "START");
+         Log.d("TextureView", "textureViewId: " + viewId);
+
+        Log.i("startMeasure", "dsd");
+
+       currentActivity.runOnUiThread(new Runnable() {
+             @Override
+               public void run() {
+                ViewGroup rootView = (ViewGroup) currentActivity.findViewById(android.R.id.content);
+                Log.i("rootView", String.valueOf(rootView));
+                rootView.addView(cameraTextureView);
+           }
+     });
         cameraService = new CameraService(currentActivity);
 
-        // TextureView cameraTextureViewFromJs = new TextureView(reactContext);
-        //  HeartRateMainActivity instance = new HeartRateMainActivity();
-        //  instance.onClickNewMeasurement();
         analyzer = new OutputAnalyzer(currentActivity);
         // analyzer = new OutputAnalyzer(currentActivity, findViewById(graphId), mainHandler);
-
-        // clear prior results
-        // char[] empty = new char[0];
-        // ((EditText) findViewById(R.id.editText)).setText(empty, 0, 0);
-        // ((TextView) findViewById(R.id.textView)).setText(empty, 0, 0);
 
          Log.d("TextureView", "textureViewId: " + textureViewId);
         //  TextureView cameraTextureViewFromJs = getCurrentActivity().findViewById(textureViewId);
@@ -141,8 +129,8 @@ public class HeartRateModule extends ReactContextBaseJavaModule {
              Log.d("TextureView", "TextureView not found!");
          }
 
-        //TextureView cameraTextureViewFromJs = getCurrentActivity().findViewById(textureViewId);
-        Log.i("cameraTextureViewFromJs", String.valueOf(cameraTextureView));
+        TextureView cameraTextureViewFromJs = getCurrentActivity().findViewById(viewId);
+        Log.i("cameraTextureViewFromJs", String.valueOf(cameraTextureViewFromJs));
         SurfaceTexture previewSurfaceTexture = cameraTextureView.getSurfaceTexture();
         Log.i("previewSurfaceTexture", String.valueOf(previewSurfaceTexture));
 

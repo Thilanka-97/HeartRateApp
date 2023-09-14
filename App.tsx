@@ -52,26 +52,37 @@ function App(): JSX.Element {
 
 	let CameraView: HostComponent<unknown> | null = null;
 
-	useEffect(() => {
-		setTimeout(() => {
-			HeartRateModule.createTextureView().then((textureViewId: number) => {
-				handleListeners();
+	// useEffect(() => {
+	// 	setTimeout(() => {
+	// 		HeartRateModule.createTextureView().then((textureViewId: number) => {
+	// 			handleListeners();
 
-				const TextureView = requireNativeComponent('TextureView');
-				console.log('textureViewId', textureViewId);
-				cameraComponentRef.current = textureViewId;
-				CameraView = TextureView as HostComponent<unknown>;
-				console.log('cameraComponentRef', cameraComponentRef);
-				console.log('TextureView', TextureView);
-				// handleStartMeasure();
-			});
-		}, 2000);
-	}, []);
+	// 			const TextureView = requireNativeComponent('TextureView');
+	// 			console.log('textureViewId', textureViewId);
+	// 			// cameraComponentRef.current = textureViewId;
+	// 			CameraView = TextureView as HostComponent<unknown>;
+	// 			console.log('cameraComponentRef', cameraComponentRef);
+	// 			console.log('TextureView', TextureView);
+	// 			// handleStartMeasure();
+	// 		});
+	// 	}, 2000);
+	// }, []);
 
 	const handleStartMeasure = () => {
 		setPulse('__._');
+		HeartRateModule.createTextureView().then((textureViewId: number) => {
+			handleListeners();
+
+			// const TextureView = requireNativeComponent('TextureView');
+			console.log('textureViewId', textureViewId);
+			// cameraComponentRef.current = textureViewId;
+			// CameraView = TextureView as HostComponent<unknown>;
+			console.log('cameraComponentRef', cameraComponentRef);
+			// console.log('TextureView', TextureView);
+			HeartRateModule.startMeasure(textureViewId);
+		});
 		console.log('cameraComponentRef.current', cameraComponentRef.current);
-		HeartRateModule.startMeasure(cameraComponentRef.current);
+		// HeartRateModule.startMeasure(cameraComponentRef.current);
 	};
 
 	const handleListeners = async () => {

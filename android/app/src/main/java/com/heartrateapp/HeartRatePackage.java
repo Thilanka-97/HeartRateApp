@@ -24,9 +24,9 @@ public class HeartRatePackage implements ReactPackage {
     @NonNull
     @Override
     public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
-        return Collections.emptyList();
-        // return Arrays.<ViewManager>asList(
-        //         new CameraView(reactContext)
-        // );
+        //return Collections.emptyList();
+        List<ViewManager> modules = new ArrayList<>();
+        modules.add(new CameraViewManager(reactContext));
+        return modules;
     }
 }
